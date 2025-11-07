@@ -1,9 +1,9 @@
 class Despesa {
-	constructor(ano, mes, dia, tipo, descricao, valor) {
+	constructor(ano, mes, dia, categoria, descricao, valor) {
 		this.ano = ano
 		this.mes = mes
 		this.dia = dia
-		this.tipo = tipo
+		this.categoria = categoria
 		this.descricao = descricao
 		this.valor = valor
 	}
@@ -15,94 +15,50 @@ class Despesa {
 			}
 		} return true
 	}
-}
 
-class Bd {
-	constructor() {
-		let id = localStorage.getItem('id')
+	traduzirParaApi(){
+		let categoriaTraduzida = ''
+		switch(this.categoria){
+            case '1': categoriaTraduzida = 'ALIMENTACAO'; break;
+            case '2': categoriaTraduzida = 'EDUCACAO'; break;
+            case '3': categoriaTraduzida = 'LAZER'; break;
+            case '4': categoriaTraduzida = 'SAUDE'; break;
+            case '5': categoriaTraduzida = 'TRANSPORTE'; break;
+			default: categoriaTraduzida = 'OUTROS';
+        }
 
-		if(id === null) {
-			localStorage.setItem('id', 0)
+		let mesTraduzido = this.mes.padStart(2, '0')
+		let diaTraduzido = this.dia.padStart(2, '0')
+		let dataTraduzida = `${this.ano}-${mesTraduzido}-${diaTraduzido}`
+
+		return{
+			descricao: this.descricao,
+			valor: parseFloat(this.valor),
+			categoria: categoriaTraduzida,
+			data: dataTraduzida
 		}
-	}
-
-	getProximoId() {
-		let proximoId = localStorage.getItem('id')
-		return parseInt(proximoId) + 1
-	}
-
-	gravar(d) {
-		let id = this.getProximoId()
-		localStorage.setItem(id, JSON.stringify(d))
-		localStorage.setItem('id', id)
-	}
-
-	recuperarRegistros(){
-		let despesas = Array()
-
-		let id = localStorage.getItem('id')
-		for(let i = 1; i <= id; i++){
-			let despesa = JSON.parse(localStorage.getItem(i))
-			if(despesa === null){
-				continue
-			}
-			despesa.id = i
-			despesas.push(despesa)
-		}
-		return despesas
-	}
-
-	pesquisar(despesa){
-		let despesasFiltradas = Array()
-		despesasFiltradas = this.recuperarRegistros()
-
-		if(despesa.ano != ''){
-			despesasFiltradas = despesasFiltradas.filter(f => f.ano == despesa.ano)
-		}
-		if(despesa.mes != ''){
-			despesasFiltradas = despesasFiltradas.filter(f => f.mes == despesa.mes)
-		}
-		if(despesa.dia != ''){
-			despesasFiltradas = despesasFiltradas.filter(f => f.dia == despesa.dia)
-		}
-		if(despesa.tipo != ''){
-			despesasFiltradas = despesasFiltradas.filter(f => f.tipo == despesa.tipo)
-		}
-		if(despesa.descricao != ''){
-			despesasFiltradas = despesasFiltradas.filter(f => f.descricao == despesa.descricao)
-		}
-		if(despesa.valor != ''){
-			despesasFiltradas = despesasFiltradas.filter(f => f.valor == despesa.valor)
-		}
-		return despesasFiltradas
-	}
-
-	remover(id){
-		localStorage.removeItem(id)
 	}
 }
-
-let bd = new Bd()
 
 function cadastrarDespesa() {
-	let ano = document.getElementById('ano')
-	let mes = document.getElementById('mes')
-	let dia = document.getElementById('dia')
-	let tipo = document.getElementById('tipo')
-	let descricao = document.getElementById('descricao')
-	let valor = document.getElementById('valor')
+	let ano = document.getElementById('ano').value
+	let mes = document.getElementById('mes').value
+	let dia = document.getElementById('dia').value
+	let categoria = document.getElementById('categoria').value
+	let descricao = document.getElementById('descricao').value
+	let valor = document.getElementById('valor').value
 
-	let despesa = new Despesa(
-		ano.value, 
-		mes.value, 
-		dia.value, 
-		tipo.value, 
-		descricao.value,
-		valor.value
-	)
+	let despesa = new Despesa(ano, mes, dia, categoria, descricao, valor)
+	let despesaTraduzida = despesa.traduzirParaApi();
 
 	if(despesa.validarDados()){
-		bd.gravar(despesa)
+		fetch('http://localhost:8080/despesas', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(despesaTraduzida)
+		})
 
 		$('#modalRegistraDespesa').modal('show')
 		document.getElementById('modalLblDiv').className = 'modal-header text-success'
@@ -127,7 +83,7 @@ function limparForm(){
 		ano.value = ''
 		mes.value = ''
 		dia.value = ''
-		tipo.value = ''
+		categoria.value = ''
 		descricao.value = ''
 		valor.value = ''
 }
@@ -145,7 +101,7 @@ function resumirDespesa(){
 function recuperaDespesa(modo){
 	let ano = document.getElementById('ano').value
 	let mes = document.getElementById('mes').value
-	let tipo = document.getElementById('tipo').value
+	let categoria = document.getElementById('categoria').value
 	let dia = ''
 	let descricao = ''
 	let valor = ''
@@ -156,7 +112,7 @@ function recuperaDespesa(modo){
 		valor = document.getElementById('valor').value
 	}
 	
-	let despesa = new Despesa(ano, mes, dia, tipo, descricao, valor)
+	let despesa = new Despesa(ano, mes, dia, categoria, descricao, valor)
 	let despesas = bd.pesquisar(despesa)
 	return despesas
 }
@@ -203,27 +159,29 @@ function carregaResumoDespesas(despesas = Array(), filtro = false){
 			d.mes = 'Todos'
 		}
 
-		if (tipo.value != ''){
-			switch(d.tipo){
-				case '1': d.tipo = "Alimentação"
+		if (categoria.value != ''){
+			switch(d.categoria){
+				case 'ALIMENTACAO': d.categoria = "Alimentação"
 					break
-				case '2': d.tipo = "Educação"
+				case 'EDUCACAO': d.categoria = "Educação"
 					break
-				case '3': d.tipo = "Lazer"
+				case 'LAZER': d.categoria = "Lazer"
 					break
-				case '4': d.tipo = "Saúde"
+				case 'SAUDE': d.categoria = "Saúde"
 					break
-				case '5': d.tipo = "Transporte"
+				case 'TRANSPORTE': d.categoria = "Transporte"
+					break
+				case 'OUTROS': d.categoria = "Outros"
 					break
 			}
 		} else{
-			d.tipo = 'Todos'
+			d.categoria = 'Todos'
 		}
 
 		if(maxhgt === 1){
 			linha.insertCell(0).innerHTML = d.ano
 			linha.insertCell(1).innerHTML = d.mes
-			linha.insertCell(2).innerHTML = d.tipo
+			linha.insertCell(2).innerHTML = d.categoria
 			linha.insertCell(3).outerHTML = `<td class="text-right">${total}</td>`;
 			maxhgt++
 		}
