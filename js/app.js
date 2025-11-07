@@ -89,8 +89,8 @@ function limparForm(){
 }
 
 function pesquisarDespesa(modo){
-	var despesas = recuperaDespesa(modo)
-	carregaListaDespesas(despesas, true)
+	traduzirParaApi(modo)
+
 }
 
 function resumirDespesa(){
@@ -188,12 +188,7 @@ function carregaResumoDespesas(despesas = Array(), filtro = false){
 	})
 }
 
-function carregaDespesas(filtro=false){
-	if(filtro == true){
-		//filtro
-		return
-	}
-
+function carregaDespesas(){
 	fetch('http://localhost:8080/despesas')
 		.then(resposta => {
 			if(!resposta.ok){
