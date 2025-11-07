@@ -230,32 +230,39 @@ function carregaResumoDespesas(despesas = Array(), filtro = false){
 	})
 }
 
-function carregaListaDespesas(despesas = Array(), filtro = false){
-	if(despesas.length == 0 && filtro == false){
-		despesas = bd.recuperarRegistros()
+function carregaDespesas(filtro=false){
+	if(filtro == true){
+		//filtro
+		return
 	}
 
+	fetch('http://localhost:8080/despesas')
+		.then(resposta => {
+			if(!resposta.ok){
+				throw new Error (`Erro de rede: ${resposta.statusText}`)
+			}
+			return resposta.json()
+		})
+		.then(listaDespesas => {
+			exibeDespesas(listaDespesas)
+		})
+		.catch(erro => {
+			console.error('Erro ao buscar despesas:', erro)
+			alert('Não foi possível carregar as despesas')
+		})
+}
+
+function exibeDespesas(despesas){
 	let listaDespesas = document.getElementById('listaDespesas')
 	listaDespesas.innerHTML = ''
 
-	despesas.forEach(function(d){
+	despesas.forEach(function(d) {
 		let linha = listaDespesas.insertRow()
-		linha.insertCell(0).innerHTML = `${d.dia}/${d.mes}/${d.ano}`
-		switch(d.tipo){
-			case '1': d.tipo = "Alimentação"
-				break
-			case '2': d.tipo = "Educação"
-				break
-			case '3': d.tipo = "Lazer"
-				break
-			case '4': d.tipo = "Saúde"
-				break
-			case '5': d.tipo = "Transporte"
-				break
-		}
-		linha.insertCell(1).innerHTML = `${d.tipo}`
-		linha.insertCell(2).innerHTML = `${d.descricao}`
-		linha.insertCell(3).innerHTML = `${d.valor}`
+		const [ano, mes, dia] = d.data.split('-')
+		linha.insertCell(0).innerHTML = `${dia}/${mes}/${ano}`
+		linha.insertCell(1).innerHTML = d.categoria
+		linha.insertCell(2).innerHTML = d.descricao
+		linha.insertCell(3).innerHTML = d.valor
 
 		let btn = document.createElement("button")
 		btn.className = "btn btn-danger"
@@ -268,8 +275,21 @@ function carregaListaDespesas(despesas = Array(), filtro = false){
 			document.getElementById('btnE').className = "btn btn-danger"
 
 			document.getElementById('btnE').onclick = function(){
-				bd.remover(id)
-				window.location.reload()
+				fetch(`http://localhost:8080/despesas/${id}`, {
+					method: 'DELETE'
+				})
+				.then(resposta => {
+					if(!resposta.ok){
+						throw new Error('Erro ao apagar a despesa.')
+					}
+					$('#modalRemoveDespesa').modal('hide')
+					btn.closest('tr').remove()
+				})
+				.catch(erro => {
+					console.error('Erro:', erro)
+					alert('Falha ao apagar.')
+					$('#modalRemoveDespesa').modal('hide')
+				})
 			}
 		}
 		linha.insertCell(4).append(btn)
