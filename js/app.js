@@ -17,16 +17,7 @@ class Despesa {
 	}
 
 	traduzirParaApi(){
-		let categoriaTraduzida = ''
-		switch(this.categoria){
-            case '1': categoriaTraduzida = 'ALIMENTACAO'; break;
-            case '2': categoriaTraduzida = 'EDUCACAO'; break;
-            case '3': categoriaTraduzida = 'LAZER'; break;
-            case '4': categoriaTraduzida = 'SAUDE'; break;
-            case '5': categoriaTraduzida = 'TRANSPORTE'; break;
-			default: categoriaTraduzida = 'OUTROS';
-        }
-
+		let categoriaTraduzida = traduzirCategoriaApi(this.categoria)
 		let mesTraduzido = this.mes.padStart(2, '0')
 		let diaTraduzido = this.dia.padStart(2, '0')
 		let dataTraduzida = `${this.ano}-${mesTraduzido}-${diaTraduzido}`
@@ -40,15 +31,41 @@ class Despesa {
 	}
 }
 
-function cadastrarDespesa() {
-	let ano = document.getElementById('ano').value
-	let mes = document.getElementById('mes').value
-	let dia = document.getElementById('dia').value
-	let categoria = document.getElementById('categoria').value
-	let descricao = document.getElementById('descricao').value
-	let valor = document.getElementById('valor').value
+function traduzirCategoriaApi(categoria) {
+    switch (categoria) {
+        case '1': return 'ALIMENTACAO';
+        case '2': return 'EDUCACAO';
+        case '3': return 'LAZER';
+        case '4': return 'SAUDE';
+        case '5': return 'TRANSPORTE';
+        default: return 'OUTROS';
+    }
+}
 
-	let despesa = new Despesa(ano, mes, dia, categoria, descricao, valor)
+/*function traduzirParaFiltro(despesa){
+	let anoTraduzido = despesa.ano
+	let mesTraduzido = despesa.mes.padStart(2, '0')
+	console.log(mesTraduzido)
+}*/
+
+function verificaDados(id) {
+    const elemento = document.getElementById(id);
+    return elemento ? elemento.value : '';
+}
+
+function obterDados(){
+	let ano = verificaDados('ano')
+	let mes = verificaDados('mes')
+	let dia = verificaDados('dia')
+	let categoria = verificaDados('categoria')
+	let descricao = verificaDados('descricao')
+	let valor = verificaDados('valor')
+	return {ano, mes, dia, categoria, descricao, valor}
+}
+
+function cadastrarDespesa() {
+	const dados = obterDados()
+	let despesa = new Despesa(dados.ano, dados.mes, dados.dia, dados.categoria, dados.descricao, dados.valor)
 	let despesaTraduzida = despesa.traduzirParaApi();
 
 	if(despesa.validarDados()){
@@ -88,9 +105,29 @@ function limparForm(){
 		valor.value = ''
 }
 
-function pesquisarDespesa(modo){
-	traduzirParaApi(modo)
+function pesquisarDespesa(){
+	const dados = obterDados()
+	let despesa = new Despesa(dados.ano, dados.mes, dados.dia, dados.categoria, dados.descricao, dados.valor)
+	let categoria = traduzirCategoriaApi(despesa.categoria)
 
+	let url = 'http://localhost:8080/despesas'
+	let filtros = []; 
+
+	if(despesa.ano){
+		filtros.push(`ano=${despesa.ano}`);
+	}
+	if(despesa.mes){
+		filtros.push(`mes=${despesa.mes}`);
+	}
+	if (despesa.categoria) {
+		filtros.push(`categoria=${categoria}`);
+	}
+
+	if (filtros.length > 0) {
+		url = url + '?' + filtros.join('&');
+	}
+
+	carregaDespesas(url)
 }
 
 function resumirDespesa(){
@@ -188,8 +225,8 @@ function carregaResumoDespesas(despesas = Array(), filtro = false){
 	})
 }
 
-function carregaDespesas(){
-	fetch('http://localhost:8080/despesas')
+function carregaDespesas(url = 'http://localhost:8080/despesas'){
+	fetch(url)
 		.then(resposta => {
 			if(!resposta.ok){
 				throw new Error (`Erro de rede: ${resposta.statusText}`)
