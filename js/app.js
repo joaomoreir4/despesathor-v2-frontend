@@ -32,25 +32,48 @@ class Despesa {
 }
 
 function traduzirCategoriaApi(categoria) {
-    switch (categoria) {
-        case '1': return 'ALIMENTACAO';
-        case '2': return 'EDUCACAO';
-        case '3': return 'LAZER';
-        case '4': return 'SAUDE';
-        case '5': return 'TRANSPORTE';
-        default: return 'OUTROS';
+    switch(categoria){
+        case '1': return 'ALIMENTACAO'
+        case '2': return 'EDUCACAO'
+        case '3': return 'LAZER'
+        case '4': return 'SAUDE'
+        case '5': return 'TRANSPORTE'
+        default: return 'OUTROS'
     }
 }
 
-/*function traduzirParaFiltro(despesa){
-	let anoTraduzido = despesa.ano
-	let mesTraduzido = despesa.mes.padStart(2, '0')
-	console.log(mesTraduzido)
-}*/
+function traduzirCategoriaFront(categoria) {
+    switch(categoria){
+        case 'ALIMENTACAO': return 'Alimentação'
+        case 'EDUCACAO': return 'Educação'
+        case 'LAZER': return 'Lazer'
+        case 'SAUDE': return 'Saúde'
+        case 'TRANSPORTE': return 'Transporte'
+        default: return 'Outros'
+    }
+}
+
+function traduzirMes(mes){
+	switch(mes){
+        case '01': return 'Janeiro'
+        case '02': return 'Fevereiro'
+        case '03': return 'Março'
+        case '04': return 'Abril'
+        case '05': return 'Maio'
+        case '06': return 'Junho'
+        case '07': return 'Julho'
+        case '08': return 'Agosto'
+        case '09': return 'Setembro'
+        case '10': return 'Outubro'
+        case '11': return 'Novembro'
+        case '12': return 'Dezembro'
+        default: return ''
+	}
+}
 
 function verificaDados(id) {
-    const elemento = document.getElementById(id);
-    return elemento ? elemento.value : '';
+    const elemento = document.getElementById(id)
+    return elemento ? elemento.value : ''
 }
 
 function obterDados(){
@@ -66,46 +89,51 @@ function obterDados(){
 function cadastrarDespesa() {
 	const dados = obterDados()
 	let despesa = new Despesa(dados.ano, dados.mes, dados.dia, dados.categoria, dados.descricao, dados.valor)
-	let despesaTraduzida = despesa.traduzirParaApi();
 
-	if(despesa.validarDados()){
-		fetch('http://localhost:8080/despesas', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(despesaTraduzida)
-		})
-
-		$('#modalRegistraDespesa').modal('show')
-		document.getElementById('modalLblDiv').className = 'modal-header text-success'
-		document.getElementById('exampleModalLabel').innerHTML = "Registro inserido com sucesso!"
-		document.getElementById('modalMensagem').innerHTML = "A despesa foi cadastrada com sucesso"
-		document.getElementById('modalBtn').innerHTML = "Voltar"
-		document.getElementById('modalBtn').className = 'btn btn-success'
-		limparForm()
-		
-	} else{
+	if(!despesa.validarDados()){
 		$('#modalRegistraDespesa').modal('show')
 		document.getElementById('modalLblDiv').className = 'modal-header text-danger'
 		document.getElementById('exampleModalLabel').innerHTML = "Erro na inclusão do registro!"
 		document.getElementById('modalMensagem').innerHTML = "Erro na gravação. Verifique se todos os campos foram preenchidos corretamente."
 		document.getElementById('modalBtn').innerHTML = "Voltar e corrigir"
 		document.getElementById('modalBtn').className = 'btn btn-danger'
-		limparForm()
+		return
 	}
-}
 
-function limparForm(){
-		ano.value = ''
-		mes.value = ''
-		dia.value = ''
-		categoria.value = ''
-		descricao.value = ''
-		valor.value = ''
-}
+	let despesaTraduzida = despesa.traduzirParaApi()
 
-function pesquisarDespesa(){
+	fetch('http://localhost:8080/despesas', {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify(despesaTraduzida)
+	})
+		.then(resposta => { 
+        if (!resposta.ok) {
+            throw new Error('Erro do servidor: ' + resposta.statusText);
+        }
+        
+        $('#modalRegistraDespesa').modal('show');
+        document.getElementById('modalLblDiv').className = 'modal-header text-success';
+        document.getElementById('exampleModalLabel').innerHTML = "Registro inserido com sucesso!";
+        document.getElementById('modalMensagem').innerHTML = "A despesa foi cadastrada com sucesso";
+        document.getElementById('modalBtn').innerHTML = "Voltar";
+        document.getElementById('modalBtn').className = 'btn btn-success';
+        
+    })
+    .catch(erro => { 
+        console.error('Erro ao salvar despesa:', erro);
+        $('#modalRegistraDespesa').modal('show');
+        document.getElementById('modalLblDiv').className = 'modal-header text-danger';
+        document.getElementById('exampleModalLabel').innerHTML = "Erro na gravação!";
+        document.getElementById('modalMensagem').innerHTML = "Não foi possível contactar o servidor. Tente novamente.";
+        document.getElementById('modalBtn').innerHTML = "Voltar e corrigir";
+        document.getElementById('modalBtn').className = 'btn btn-danger';
+    });
+}	
+
+function pesquisarDespesa(tipo){
 	const dados = obterDados()
 	let despesa = new Despesa(dados.ano, dados.mes, dados.dia, dados.categoria, dados.descricao, dados.valor)
 	let categoria = traduzirCategoriaApi(despesa.categoria)
@@ -114,118 +142,23 @@ function pesquisarDespesa(){
 	let filtros = []; 
 
 	if(despesa.ano){
-		filtros.push(`ano=${despesa.ano}`);
+		filtros.push(`ano=${despesa.ano}`)
 	}
 	if(despesa.mes){
-		filtros.push(`mes=${despesa.mes}`);
+		filtros.push(`mes=${despesa.mes}`)
 	}
 	if (despesa.categoria) {
-		filtros.push(`categoria=${categoria}`);
+		filtros.push(`categoria=${categoria}`)
 	}
 
 	if (filtros.length > 0) {
-		url = url + '?' + filtros.join('&');
+		url = url + '?' + filtros.join('&')
 	}
 
-	carregaDespesas(url)
+	carregaDespesas(url, tipo)
 }
 
-function resumirDespesa(){
-	var despesas = recuperaDespesa()
-	carregaResumoDespesas(despesas, true)
-}
-
-function recuperaDespesa(modo){
-	let ano = document.getElementById('ano').value
-	let mes = document.getElementById('mes').value
-	let categoria = document.getElementById('categoria').value
-	let dia = ''
-	let descricao = ''
-	let valor = ''
-
-	if(modo === 'pesquisa'){
-		dia = document.getElementById('dia').value
-		descricao = document.getElementById('descricao').value
-		valor = document.getElementById('valor').value
-	}
-	
-	let despesa = new Despesa(ano, mes, dia, categoria, descricao, valor)
-	let despesas = bd.pesquisar(despesa)
-	return despesas
-}
-
-function carregaResumoDespesas(despesas = Array(), filtro = false){
-	if(despesas.length == 0 && filtro == false){
-		despesas = bd.recuperarRegistros()
-	}
-
-	let total = 0
-	for(i = 0; i < despesas.length; i++){
-		total += parseFloat(despesas[i].valor) 
-	}
-	total = total.toFixed(2)
-
-	let listaDespesas = document.getElementById('listaDespesas')
-	listaDespesas.innerHTML = ''
-
-	let maxhgt = 1
-
-	despesas.forEach(function(d){
-		let linha = listaDespesas.insertRow()
-		d.ano = ano.value || 'Todos'
-
-		if(mes.value != ''){
-			let nomeMeses = {
-				'1': "Janeiro",
-				'2': "Fevereiro",
-				'3': "Março",
-				'4': "Abril",
-				'5': "Maio",
-				'6': "Junho",
-				'7': "Julho",
-				'8': "Agosto",
-				'9': "Setembro",
-				'10': "Outubro",
-				'11': "Novembro",
-				'12': "Dezembro",
-			}
-			if (nomeMeses[d.mes]) {
-				d.mes = nomeMeses[d.mes];
-			} 
-		} else{
-			d.mes = 'Todos'
-		}
-
-		if (categoria.value != ''){
-			switch(d.categoria){
-				case 'ALIMENTACAO': d.categoria = "Alimentação"
-					break
-				case 'EDUCACAO': d.categoria = "Educação"
-					break
-				case 'LAZER': d.categoria = "Lazer"
-					break
-				case 'SAUDE': d.categoria = "Saúde"
-					break
-				case 'TRANSPORTE': d.categoria = "Transporte"
-					break
-				case 'OUTROS': d.categoria = "Outros"
-					break
-			}
-		} else{
-			d.categoria = 'Todos'
-		}
-
-		if(maxhgt === 1){
-			linha.insertCell(0).innerHTML = d.ano
-			linha.insertCell(1).innerHTML = d.mes
-			linha.insertCell(2).innerHTML = d.categoria
-			linha.insertCell(3).outerHTML = `<td class="text-right">${total}</td>`;
-			maxhgt++
-		}
-	})
-}
-
-function carregaDespesas(url = 'http://localhost:8080/despesas'){
+function carregaDespesas(url = 'http://localhost:8080/despesas', tipo){
 	fetch(url)
 		.then(resposta => {
 			if(!resposta.ok){
@@ -234,7 +167,11 @@ function carregaDespesas(url = 'http://localhost:8080/despesas'){
 			return resposta.json()
 		})
 		.then(listaDespesas => {
-			exibeDespesas(listaDespesas)
+			if(tipo === 'consulta'){
+				exibeConsulta(listaDespesas)
+			}else{
+				exibeResumo(listaDespesas)
+			}
 		})
 		.catch(erro => {
 			console.error('Erro ao buscar despesas:', erro)
@@ -242,7 +179,7 @@ function carregaDespesas(url = 'http://localhost:8080/despesas'){
 		})
 }
 
-function exibeDespesas(despesas){
+function exibeConsulta(despesas){
 	let listaDespesas = document.getElementById('listaDespesas')
 	listaDespesas.innerHTML = ''
 
@@ -250,7 +187,8 @@ function exibeDespesas(despesas){
 		let linha = listaDespesas.insertRow()
 		const [ano, mes, dia] = d.data.split('-')
 		linha.insertCell(0).innerHTML = `${dia}/${mes}/${ano}`
-		linha.insertCell(1).innerHTML = d.categoria
+		let categoria = traduzirCategoriaFront(d.categoria)
+		linha.insertCell(1).innerHTML = categoria
 		linha.insertCell(2).innerHTML = d.descricao
 		linha.insertCell(3).innerHTML = d.valor
 
@@ -284,4 +222,66 @@ function exibeDespesas(despesas){
 		}
 		linha.insertCell(4).append(btn)
 	})
+}
+
+function exibeResumo(despesas){
+	let resumeDespesas = document.getElementById('listaDespesas')
+	resumeDespesas.innerHTML = ''
+
+	despesas.forEach(function(d) {
+		let linha = resumeDespesas.insertRow()
+		let [ano, mes] = d.data.split('-')
+		linha.insertCell(0).innerHTML = `${ano}`
+		mes = traduzirMes(mes)
+		linha.insertCell(1).innerHTML = `${mes}`
+		let categoria = traduzirCategoriaFront(d.categoria)
+		linha.insertCell(2).innerHTML = categoria
+				
+		let celulaValor = linha.insertCell(3);
+		celulaValor.className = "text-right";
+		celulaValor.innerHTML = d.valor;
+	})
+}
+	
+
+function formataCampos() {
+    const campoDia = document.getElementById('dia')
+	campoDia.addEventListener('input', function (event) {
+		let valor = event.target.value
+		valor = valor.replace(/[^0-9]/g, '')
+		let valorNumerico = parseInt(valor, 10)
+		
+		if (valorNumerico < 1 && valor.length > 0) {
+			valor = '1'
+		} else if (valorNumerico > 31) {
+			valor = '31'
+		}
+		event.target.value = valor
+	})
+
+    const campoValor = document.getElementById('valor')
+    campoValor.addEventListener('input', function (event) {
+            let valor = event.target.value
+            valor = valor.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1')
+            
+            const partes = valor.split('.')
+            if (partes.length === 2 && partes[1].length > 2) {
+                valor = `${partes[0]}.${partes[1].substring(0, 2)}`
+            }
+            event.target.value = valor
+        });
+
+        campoValor.addEventListener('blur', function (event) {
+            let valor = event.target.value
+
+            if (valor === "" || valor.endsWith('.')) {
+                return
+            }
+
+            let valorNumerico = parseFloat(valor);
+
+            if (!isNaN(valorNumerico)) {
+                event.target.value = valorNumerico.toFixed(2)
+            }
+        })
 }
