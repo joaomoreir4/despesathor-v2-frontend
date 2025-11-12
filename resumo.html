@@ -75,7 +75,7 @@
             <option value="12">Dezembro</option>
           </select>
         </div>
-        <div class="col-md-5">
+        <div class="col-md-4">
           <select class="form-control" id="categoria">
             <option value="" hidden selected>Categoria</option>
             <option value="">Todas as Categorias</option>
@@ -87,8 +87,11 @@
             <option value="6">Outros</option>
           </select>
       </div>
-        <div class="col-md-1 d-flex justify-content-start">
-          <button type="button" class="btn btn-primary" onclick="pesquisarDespesa('resumo')">
+        <div class="col-md-2 d-flex justify-content-center">
+          <button type="button" class="btn btn-primary mr-5" onclick="limparFiltros('resumo')">
+            <i class="fas fa-trash"></i>
+          </button>
+          <button type="button" class="btn btn-primary ml-3" onclick="pesquisarDespesa('resumo')">
             <i class="fas fa-search"></i>
           </button>
       </div>

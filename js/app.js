@@ -262,6 +262,13 @@ document.addEventListener('DOMContentLoaded', function(){
 	formataCampos()
 })
 
+function limparFiltros(tipo){
+	document.getElementById('ano').value = ""
+	document.getElementById('mes').value = ""
+	document.getElementById('categoria').value = ""
+	pesquisarDespesa(tipo)
+}
+
 function formataCampos() {
     const campoDia = document.getElementById('dia')
 	if(campoDia){
