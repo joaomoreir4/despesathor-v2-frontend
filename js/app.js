@@ -139,6 +139,10 @@ function pesquisarDespesa(tipo){
 	let categoria = traduzirCategoriaApi(despesa.categoria)
 
 	let url = 'http://localhost:8080/despesas'
+	if(tipo === 'resumo'){
+		url = 'http://localhost:8080/despesas/resumo'
+	}
+	
 	let filtros = []; 
 
 	if(despesa.ano){
@@ -166,11 +170,11 @@ function carregaDespesas(url = 'http://localhost:8080/despesas', tipo){
 			}
 			return resposta.json()
 		})
-		.then(listaDespesas => {
+		.then(apiResposta => {
 			if(tipo === 'consulta'){
-				exibeConsulta(listaDespesas)
+				exibeConsulta(apiResposta)
 			}else{
-				exibeResumo(listaDespesas)
+				exibeResumo(apiResposta)
 			}
 		})
 		.catch(erro => {
@@ -224,64 +228,82 @@ function exibeConsulta(despesas){
 	})
 }
 
-function exibeResumo(despesas){
+function exibeResumo(apiResposta){
 	let resumeDespesas = document.getElementById('listaDespesas')
 	resumeDespesas.innerHTML = ''
 
-	despesas.forEach(function(d) {
-		let linha = resumeDespesas.insertRow()
-		let [ano, mes] = d.data.split('-')
-		linha.insertCell(0).innerHTML = `${ano}`
-		mes = traduzirMes(mes)
-		linha.insertCell(1).innerHTML = `${mes}`
-		let categoria = traduzirCategoriaFront(d.categoria)
-		linha.insertCell(2).innerHTML = categoria
-				
-		let celulaValor = linha.insertCell(3);
-		celulaValor.className = "text-right";
-		celulaValor.innerHTML = d.valor;
-	})
+	let ano = verificaDados('ano')
+	ano = ano ? ano : "Todos";
+	let mes = verificaDados('mes')
+	mes = mes ? traduzirMes('0' + mes) : "Todos";
+	let categoria = verificaDados('categoria')
+	categoria = categoria ? traduzirCategoriaFront(traduzirCategoriaApi(categoria)) : "Todas";
+	let valorTotal = apiResposta.valorTotal.toFixed(2)
+
+	let linha = resumeDespesas.insertRow()
+	linha.insertCell(0).innerHTML = `${ano}`
+	linha.insertCell(1).innerHTML = `${mes}`
+	linha.insertCell(2).innerHTML = `${categoria}`
+			
+	let celulaValor = linha.insertCell(3);
+	celulaValor.className = "text-right";
+	celulaValor.innerHTML = valorTotal;
 }
 	
 
+document.addEventListener('DOMContentLoaded', function(){
+	const paginaAtual = window.location.pathname
+	if(paginaAtual.includes('consulta.html')){
+		pesquisarDespesa('consulta')
+	}else if(paginaAtual.includes('resumo.html')){
+		pesquisarDespesa('resumo')
+	}
+
+	formataCampos()
+})
+
 function formataCampos() {
     const campoDia = document.getElementById('dia')
-	campoDia.addEventListener('input', function (event) {
-		let valor = event.target.value
-		valor = valor.replace(/[^0-9]/g, '')
-		let valorNumerico = parseInt(valor, 10)
-		
-		if (valorNumerico < 1 && valor.length > 0) {
-			valor = '1'
-		} else if (valorNumerico > 31) {
-			valor = '31'
-		}
-		event.target.value = valor
-	})
+	if(campoDia){
+		campoDia.addEventListener('input', function (event) {
+			let valor = event.target.value
+			valor = valor.replace(/[^0-9]/g, '')
+			let valorNumerico = parseInt(valor, 10)
+			
+			if (valorNumerico < 1 && valor.length > 0) {
+				valor = '1'
+			} else if (valorNumerico > 31) {
+				valor = '31'
+			}
+			event.target.value = valor
+		})
+	}
 
     const campoValor = document.getElementById('valor')
-    campoValor.addEventListener('input', function (event) {
-            let valor = event.target.value
-            valor = valor.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1')
-            
-            const partes = valor.split('.')
-            if (partes.length === 2 && partes[1].length > 2) {
-                valor = `${partes[0]}.${partes[1].substring(0, 2)}`
-            }
-            event.target.value = valor
-        });
+	if(campoValor){
+		campoValor.addEventListener('input', function (event) {
+				let valor = event.target.value
+				valor = valor.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1')
+				
+				const partes = valor.split('.')
+				if (partes.length === 2 && partes[1].length > 2) {
+					valor = `${partes[0]}.${partes[1].substring(0, 2)}`
+				}
+				event.target.value = valor
+			});
 
-        campoValor.addEventListener('blur', function (event) {
-            let valor = event.target.value
+			campoValor.addEventListener('blur', function (event) {
+				let valor = event.target.value
 
-            if (valor === "" || valor.endsWith('.')) {
-                return
-            }
+				if (valor === "" || valor.endsWith('.')) {
+					return
+				}
 
-            let valorNumerico = parseFloat(valor);
+				let valorNumerico = parseFloat(valor);
 
-            if (!isNaN(valorNumerico)) {
-                event.target.value = valorNumerico.toFixed(2)
-            }
-        })
+				if (!isNaN(valorNumerico)) {
+					event.target.value = valorNumerico.toFixed(2)
+				}
+			})
+	}
 }
