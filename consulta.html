@@ -91,7 +91,7 @@
           <button type="button" class="btn btn-primary mr-5" onclick="limparFiltros('consulta')">
             <i class="fas fa-trash"></i>
           </button>
-          <button type="button" class="btn btn-primary justify-content-start" onclick="pesquisarDespesa('consulta')">
+          <button type="button" class="btn btn-primary" onclick="pesquisarDespesa('consulta')">
             <i class="fas fa-search"></i>
           </button>
       </div>
@@ -105,6 +105,7 @@
                 <th>Categoria</th>
                 <th>Descrição</th>
                 <th>Valor</th>
+                <th></th>
                 <th></th>
               </tr>
             </thead>
@@ -129,7 +130,75 @@
           </div>
           <div class="modal-footer" id="modalFooter">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Não</button>
-            <button id="btnE">Sim, excluir</button>
+            <button id="btnD">Sim, excluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal fade" id="modalEditaDespesa" tabindex="-1" role="dialog" aria-labelledby="editExampleModalLabel" aria-hidden="false">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editExampleModalLabel">Edição de Registro</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div id="editModalMensagem" class="modal-body">
+            <div id="editErro" class="alert alert-danger d-none" role="alert"></div>
+            <div class="row mb-2">
+              <div class="col-md-2">
+                <select class="form-control" id="editAno">
+                  <option value="" hidden selected>Ano</option>
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select class="form-control" id="editMes">
+                  <option value="" hidden selected>Mês</option>
+                  <option value="1">Janeiro</option>
+                  <option value="2">Fevereiro</option>
+                  <option value="3">Março</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Maio</option>
+                  <option value="6">Junho</option>
+                  <option value="7">Julho</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Setembro</option>
+                  <option value="10">Outubro</option>
+                  <option value="11">Novembro</option>
+                  <option value="12">Dezembro</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <input 
+                  type="text" class="form-control" placeholder="Dia" id="editDia" maxlength="2" autocomplete="off"/>
+              </div>
+              <div class="col-md-6">
+                <select class="form-control" id="editCategoria">
+                  <option value="" hidden selected>Categoria</option>
+                  <option value="1">Alimentação</option>
+                  <option value="2">Educação</option>
+                  <option value="3">Lazer</option>
+                  <option value="4">Saúde</option>
+                  <option value="5">Transporte</option>
+                  <option value="6">Outros</option>
+                </select>
+              </div>
+            </div>                             
+            <div class="row">
+              <div class="col-md-8">
+                <input type="text" class="form-control" placeholder="Descrição" id="editDescricao" />
+              </div>
+              <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="Valor (000.00)" id="editValor" inputmode="descimal"/>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer" id="editModalFooter">
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancelar</button>
+            <button id="btnU">Atualizar</button>
           </div>
         </div>
       </div>
