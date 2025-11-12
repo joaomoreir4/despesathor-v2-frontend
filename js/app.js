@@ -1,3 +1,33 @@
+const CAT_API_PARA_FRONT = {
+    'ALIMENTACAO': { id: '1', front: 'Alimentação' },
+    'EDUCACAO':    { id: '2', front: 'Educação' },
+    'LAZER':       { id: '3', front: 'Lazer' },
+    'SAUDE':       { id: '4', front: 'Saúde' },
+    'TRANSPORTE':  { id: '5', front: 'Transporte' },
+    'OUTROS':      { id: '6', front: 'Outros' }
+};
+
+const CAT_ID_PARA_API = {
+    '1': 'ALIMENTACAO',
+    '2': 'EDUCACAO',
+    '3': 'LAZER',
+    '4': 'SAUDE',
+    '5': 'TRANSPORTE',
+    '6': 'OUTROS'
+};
+
+function traduzirCatParaApi(id) {
+    return CAT_ID_PARA_API[id] || 'OUTROS'
+}
+
+function traduzirCatParaFront(categoriaApi) {
+    return CAT_API_PARA_FRONT[categoriaApi] ? CAT_API_PARA_FRONT[categoriaApi].front : 'Outros'
+}
+
+function traduzirCatParaEdit(categoriaApi) {
+    return CAT_API_PARA_FRONT[categoriaApi] ? CAT_API_PARA_FRONT[categoriaApi].id : '6'
+}
+
 class Despesa {
 	constructor(ano, mes, dia, categoria, descricao, valor) {
 		this.ano = ano
@@ -17,7 +47,7 @@ class Despesa {
 	}
 
 	traduzirParaApi(){
-		let categoriaTraduzida = traduzirCategoriaApi(this.categoria)
+		let categoriaTraduzida = traduzirCatParaApi(this.categoria)
 		let mesTraduzido = this.mes.padStart(2, '0')
 		let diaTraduzido = this.dia.padStart(2, '0')
 		let dataTraduzida = `${this.ano}-${mesTraduzido}-${diaTraduzido}`
@@ -29,39 +59,6 @@ class Despesa {
 			data: dataTraduzida
 		}
 	}
-}
-
-function traduzirCategoriaApi(categoria){
-    switch(categoria){
-        case '1': return 'ALIMENTACAO'
-        case '2': return 'EDUCACAO'
-        case '3': return 'LAZER'
-        case '4': return 'SAUDE'
-        case '5': return 'TRANSPORTE'
-        default: return 'OUTROS'
-    }
-}
-
-function traduzirCategoriaFront(categoria){
-    switch(categoria){
-        case 'ALIMENTACAO': return 'Alimentação'
-        case 'EDUCACAO': return 'Educação'
-        case 'LAZER': return 'Lazer'
-        case 'SAUDE': return 'Saúde'
-        case 'TRANSPORTE': return 'Transporte'
-        default: return 'Outros'
-    }
-}
-
-function traduzirCategoriaEdit(categoria){
-	switch(categoria){
-        case 'ALIMENTACAO': return '1'
-        case 'EDUCACAO': return '2'
-        case 'LAZER': return '3'
-        case 'SAUDE': return '4'
-        case 'TRANSPORTE': return '5'
-        case 'OUTROS': return '6'
-    }
 }
 
 function traduzirMes(mes){
@@ -116,20 +113,18 @@ function obterDados(modo){
 	categoria = verificaDados(categoria)
 	descricao = verificaDados(descricao)
 	valor = verificaDados(valor)
-	return {ano, mes, dia, categoria, descricao, valor}
+	return new Despesa(ano, mes, dia, categoria, descricao, valor)
 }
 
 function cadastrarDespesa() {
-	const dados = obterDados()
-	let despesa = new Despesa(dados.ano, dados.mes, dados.dia, dados.categoria, dados.descricao, dados.valor)
+	let despesa = obterDados()
 
 	if(!despesa.validarDados()){
-		$('#modalRegistraDespesa').modal('show')
-		document.getElementById('modalLblDiv').className = 'modal-header text-danger'
-		document.getElementById('exampleModalLabel').innerHTML = "Erro na inclusão do registro!"
-		document.getElementById('modalMensagem').innerHTML = "Erro na gravação. Verifique se todos os campos foram preenchidos corretamente."
-		document.getElementById('modalBtn').innerHTML = "Voltar e corrigir"
-		document.getElementById('modalBtn').className = 'btn btn-danger'
+		exibirModalFeedback(
+            'erro', 
+            'Erro no cadastro!', 
+            'Erro na gravação. Verifique se todos os campos foram preenchidos corretamente.'
+        )
 		return
 	}
 
@@ -146,30 +141,25 @@ function cadastrarDespesa() {
         if (!resposta.ok) {
             throw new Error('Erro do servidor: ' + resposta.statusText);
         }
-        
-        $('#modalRegistraDespesa').modal('show');
-        document.getElementById('modalLblDiv').className = 'modal-header text-success';
-        document.getElementById('exampleModalLabel').innerHTML = "Registro inserido com sucesso!";
-        document.getElementById('modalMensagem').innerHTML = "A despesa foi cadastrada com sucesso";
-        document.getElementById('modalBtn').innerHTML = "Voltar";
-        document.getElementById('modalBtn').className = 'btn btn-success';
-        
+        exibirModalFeedback(
+            'sucesso', 
+            'Registro inserido com sucesso!', 
+            'A despesa foi cadastrada com sucesso'
+        );
     })
     .catch(erro => { 
         console.error('Erro ao salvar despesa:', erro);
-        $('#modalRegistraDespesa').modal('show');
-        document.getElementById('modalLblDiv').className = 'modal-header text-danger';
-        document.getElementById('exampleModalLabel').innerHTML = "Erro na gravação!";
-        document.getElementById('modalMensagem').innerHTML = "Não foi possível contactar o servidor. Tente novamente.";
-        document.getElementById('modalBtn').innerHTML = "Voltar e corrigir";
-        document.getElementById('modalBtn').className = 'btn btn-danger';
+        exibirModalFeedback(
+            'erro', 
+            'Erro no cadastro!', 
+            'Não foi possível contactar o servidor. Tente novamente.'
+        );
     });
 }	
 
 function pesquisarDespesa(tipo){
-	const dados = obterDados()
-	let despesa = new Despesa(dados.ano, dados.mes, dados.dia, dados.categoria, dados.descricao, dados.valor)
-	let categoria = traduzirCategoriaApi(despesa.categoria)
+	let despesa = obterDados()
+	let categoria = traduzirCatParaApi(despesa.categoria)
 
 	let url = 'http://localhost:8080/despesas'
 	if(tipo === 'resumo'){
@@ -224,7 +214,7 @@ function exibeConsulta(despesas){
 		let linha = listaDespesas.insertRow()
 		const [ano, mes, dia] = d.data.split('-')
 		linha.insertCell(0).innerHTML = `${dia}/${mes}/${ano}`
-		let categoria = traduzirCategoriaFront(d.categoria)
+		let categoria = traduzirCatParaFront(d.categoria)
 		linha.insertCell(1).innerHTML = categoria
 		linha.insertCell(2).innerHTML = d.descricao
 		linha.insertCell(3).innerHTML = d.valor
@@ -232,15 +222,14 @@ function exibeConsulta(despesas){
 		let btn = document.createElement("button")
 		btn.className = "btn btn-danger"
 		btn.innerHTML = "<i class='fas fa-times'></i>"
-		btn.id = `id_despesa_${d.id}`
+		btn.id = `id_deletar_${d.id}`
 		btn.onclick = function(){
-			removerDespesa(d)
+			removerDespesa(d, this)
 		} 
 
 		let btnEdit = document.createElement("button")
 		btnEdit.className = "btn btn-primary"
 		btnEdit.innerHTML = "<i class='fas fa-edit'></i>"
-		btnEdit.id = `id_despesa_${d.id}`
 		btnEdit.onclick = function(){
 			editarDespesa(d)
 				.catch(erro => {
@@ -254,7 +243,7 @@ function exibeConsulta(despesas){
 	})
 }
 
-function removerDespesa(d){
+function removerDespesa(d, btn){
 	$('#modalRemoveDespesa').modal('show')
 	document.getElementById('btnD').className = "btn btn-danger"
 
@@ -267,7 +256,6 @@ function removerDespesa(d){
 					throw new Error('Erro ao apagar a despesa.')
 				}
 				$('#modalRemoveDespesa').modal('hide')
-				let btn = document.getElementById(`id_despesa_${d.id}`)
 				btn.closest('tr').remove()
 			})
 			.catch(erro => {
@@ -282,7 +270,7 @@ async function editarDespesa(d){
 	url = `http://localhost:8080/despesas/${d.id}`
 	let despesa = await carregaDespesas(url, 'edit')
 	let [ano, mes, dia] = traduzirDataEdit(despesa.data)
-	let categoria = traduzirCategoriaEdit(despesa.categoria)
+	let categoria = traduzirCatParaEdit(despesa.categoria)
 	document.getElementById('editAno').value = ano
 	document.getElementById('editMes').value = mes
 	document.getElementById('editDia').value = dia
@@ -297,8 +285,7 @@ async function editarDespesa(d){
 		let erro = document.getElementById('editErro')
 		erro.classList.add('d-none')
 
-		const dados = obterDados('edit')
-		let despesaEditada = new Despesa(dados.ano, dados.mes, dados.dia, dados.categoria, dados.descricao, dados.valor)
+		let despesaEditada = obterDados('edit')
 		if(!despesaEditada.validarDados()){
 			erro.innerHTML = "Erro: Verifique se todos os campos foram preenchidos."
 			erro.classList.remove('d-none')
@@ -339,7 +326,7 @@ function exibeResumo(apiResposta){
 	let mes = verificaDados('mes')
 	mes = mes ? traduzirMes('0' + mes) : "Todos";
 	let categoria = verificaDados('categoria')
-	categoria = categoria ? traduzirCategoriaFront(traduzirCategoriaApi(categoria)) : "Todas";
+	categoria = categoria ? traduzirCatParaFront(traduzirCatParaApi(categoria)) : "Todas";
 	let valorTotal = apiResposta.valorTotal.toFixed(2)
 
 	let linha = resumeDespesas.insertRow()
@@ -350,6 +337,27 @@ function exibeResumo(apiResposta){
 	let celulaValor = linha.insertCell(3);
 	celulaValor.className = "text-right";
 	celulaValor.innerHTML = valorTotal;
+}
+
+function exibirModalFeedback(tipo, titulo, mensagem) {
+	const modalDiv = document.getElementById('modalLblDiv')
+    const modalTitulo = document.getElementById('exampleModalLabel')
+    const modalCorpo = document.getElementById('modalMensagem')
+    const modalBotao = document.getElementById('modalBtn')
+
+	if (tipo === 'sucesso') {
+        modalDiv.className = 'modal-header text-success';
+        modalBotao.className = 'btn btn-success';
+        modalBotao.innerHTML = 'Voltar';
+    } else { 
+        modalDiv.className = 'modal-header text-danger';
+        modalBotao.className = 'btn btn-danger';
+        modalBotao.innerHTML = 'Voltar e corrigir';
+    }
+
+	modalTitulo.innerHTML = titulo;
+    modalCorpo.innerHTML = mensagem;
+    $('#modalRegistraDespesa').modal('show');
 }
 	
 document.addEventListener('DOMContentLoaded', function(){
