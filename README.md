@@ -10,7 +10,7 @@ Este é o frontend (aplicação cliente) do projeto **Despesathor 2.0**, uma apl
 Esta aplicação foi **migrada** de uma arquitetura de protótipo (que usava `localStorage`) para uma aplicação web moderna que consome uma API RESTful (backend) dedicada.
 
 O backend (API Java/Spring Boot) que esta aplicação consome pode ser encontrado aqui:
-**[https://github.com/joaomoreir4/despesathor-v2-api](https://github.com/joaomoreir4/despesathor-v2-api)]**
+**[https://github.com/joaomoreir4/despesathor-v2-api](https://github.com/joaomoreir4/despesathor-v2-api)**
 
 ## 1\. Sobre o Projeto
 
