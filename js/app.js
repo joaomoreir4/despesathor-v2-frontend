@@ -16,17 +16,17 @@ const CAT_ID_PARA_API = {
     '6': 'OUTROS'
 };
 
-function traduzirCatParaApi(id) {
-    return CAT_ID_PARA_API[id] || 'OUTROS'
-}
+const MES_API_PARA_FRONT = {
+    '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março',
+    '04': 'Abril',   '05': 'Maio',      '06': 'Junho',
+    '07': 'Julho',   '08': 'Agosto',    '09': 'Setembro',
+    '10': 'Outubro', '11': 'Novembro',  '12': 'Dezembro'
+};
 
-function traduzirCatParaFront(categoriaApi) {
-    return CAT_API_PARA_FRONT[categoriaApi] ? CAT_API_PARA_FRONT[categoriaApi].front : 'Outros'
-}
-
-function traduzirCatParaEdit(categoriaApi) {
-    return CAT_API_PARA_FRONT[categoriaApi] ? CAT_API_PARA_FRONT[categoriaApi].id : '6'
-}
+const formatarValorParaFront = new Intl.NumberFormat('pt-BR', {
+	style: 'currency',
+	currency: 'BRL'
+})
 
 class Despesa {
 	constructor(ano, mes, dia, categoria, descricao, valor) {
@@ -54,67 +54,23 @@ class Despesa {
 
 		return{
 			descricao: this.descricao,
-			valor: parseFloat(this.valor),
+			valor: formatarValorParaApi(this.valor),
 			categoria: categoriaTraduzida,
 			data: dataTraduzida
 		}
 	}
 }
 
-function traduzirMes(mes){
-	switch(mes){
-        case '01': return 'Janeiro'
-        case '02': return 'Fevereiro'
-        case '03': return 'Março'
-        case '04': return 'Abril'
-        case '05': return 'Maio'
-        case '06': return 'Junho'
-        case '07': return 'Julho'
-        case '08': return 'Agosto'
-        case '09': return 'Setembro'
-        case '10': return 'Outubro'
-        case '11': return 'Novembro'
-        case '12': return 'Dezembro'
-        default: return ''
-	}
-}
-
-function traduzirDataEdit(data){
-	let [ano, mes, dia] = data.split('-')
-	mes = Number(mes)
-	return [ano, mes, dia]
-}
-
-function verificaDados(id) {
-    const elemento = document.getElementById(id)
-    return elemento ? elemento.value : ''
-}
-
-function obterDados(modo){
-	let ano = 'ano'
-	let mes = 'mes'
-	let dia = 'dia'
-	let categoria = 'categoria'
-	let descricao = 'descricao'
-	let valor = 'valor'
-
-	if(modo === 'edit'){
-		ano = 'editAno'
-		mes = 'editMes'
-		dia = 'editDia'
-		categoria = 'editCategoria'
-		descricao = 'editDescricao'
-		valor = 'editValor'
+document.addEventListener('DOMContentLoaded', function(){
+	const paginaAtual = window.location.pathname
+	if(paginaAtual.includes('consulta.html')){
+		pesquisarDespesa('consulta')
+	}else if(paginaAtual.includes('resumo.html')){
+		pesquisarDespesa('resumo')
 	}
 
-	ano = verificaDados(ano)
-	mes = verificaDados(mes)
-	dia = verificaDados(dia)
-	categoria = verificaDados(categoria)
-	descricao = verificaDados(descricao)
-	valor = verificaDados(valor)
-	return new Despesa(ano, mes, dia, categoria, descricao, valor)
-}
+	formataCampos()
+})
 
 function cadastrarDespesa() {
 	let despesa = obterDados()
@@ -155,7 +111,7 @@ function cadastrarDespesa() {
             'Não foi possível contactar o servidor. Tente novamente.'
         );
     });
-}	
+}
 
 function pesquisarDespesa(tipo){
 	let despesa = obterDados()
@@ -185,62 +141,11 @@ function pesquisarDespesa(tipo){
 	carregaDespesas(url, tipo)
 }
 
-async function carregaDespesas(url = 'http://localhost:8080/despesas', tipo){
-	try{
-		const resposta = await fetch(url)
-		if(!resposta.ok){
-			throw new Error (`Erro de rede: ${resposta.statusText}`)
-		}
-		
-		const apiResposta = await resposta.json()
-		if(tipo === 'consulta'){
-			exibeConsulta(apiResposta)
-		}else if(tipo === 'edit'){
-			return apiResposta
-		}else{
-			exibeResumo(apiResposta)
-		}
-	} catch(erro) {
-			console.error('Erro ao buscar despesas:', erro)
-			alert('Não foi possível carregar as despesas')
-		}
-}
-
-function exibeConsulta(despesas){
-	let listaDespesas = document.getElementById('listaDespesas')
-	listaDespesas.innerHTML = ''
-
-	despesas.forEach(function(d) {
-		let linha = listaDespesas.insertRow()
-		const [ano, mes, dia] = d.data.split('-')
-		linha.insertCell(0).innerHTML = `${dia}/${mes}/${ano}`
-		let categoria = traduzirCatParaFront(d.categoria)
-		linha.insertCell(1).innerHTML = categoria
-		linha.insertCell(2).innerHTML = d.descricao
-		linha.insertCell(3).innerHTML = d.valor
-
-		let btn = document.createElement("button")
-		btn.className = "btn btn-danger"
-		btn.innerHTML = "<i class='fas fa-times'></i>"
-		btn.id = `id_deletar_${d.id}`
-		btn.onclick = function(){
-			removerDespesa(d, this)
-		} 
-
-		let btnEdit = document.createElement("button")
-		btnEdit.className = "btn btn-primary"
-		btnEdit.innerHTML = "<i class='fas fa-edit'></i>"
-		btnEdit.onclick = function(){
-			editarDespesa(d)
-				.catch(erro => {
-					console.error("Erro ao tentar carregar a edição:", erro);
-					alert("Erro: Não foi possível editar a despesa.");
-				});
-		}
-
-		linha.insertCell(4).append(btnEdit)
-		linha.insertCell(5).append(btn)
-	})
+function limparFiltros(tipo){
+	document.getElementById('ano').value = ""
+	document.getElementById('mes').value = ""
+	document.getElementById('categoria').value = ""
+	pesquisarDespesa(tipo)
 }
 
 function removerDespesa(d, btn){
@@ -317,74 +222,110 @@ async function editarDespesa(d){
 	}
 }
 
+async function carregaDespesas(url = 'http://localhost:8080/despesas', tipo){
+	try{
+		const resposta = await fetch(url)
+		if(!resposta.ok){
+			throw new Error (`Erro de rede: ${resposta.statusText}`)
+		}
+		
+		const apiResposta = await resposta.json()
+		if(tipo === 'consulta'){
+			exibeConsulta(apiResposta)
+		}else if(tipo === 'edit'){
+			return apiResposta
+		}else{
+			exibeResumo(apiResposta)
+		}
+	} catch(erro) {
+			console.error('Erro ao buscar despesas:', erro)
+			alert('Não foi possível carregar as despesas')
+		}
+}
+
+function obterDados(modo){
+	let ano = 'ano'
+	let mes = 'mes'
+	let dia = 'dia'
+	let categoria = 'categoria'
+	let descricao = 'descricao'
+	let valor = 'valor'
+
+	if(modo === 'edit'){
+		ano = 'editAno'
+		mes = 'editMes'
+		dia = 'editDia'
+		categoria = 'editCategoria'
+		descricao = 'editDescricao'
+		valor = 'editValor'
+	}
+
+	ano = verificaDados(ano)
+	mes = verificaDados(mes)
+	dia = verificaDados(dia)
+	categoria = verificaDados(categoria)
+	descricao = verificaDados(descricao)
+	valor = verificaDados(valor)
+	return new Despesa(ano, mes, dia, categoria, descricao, valor)
+}
+
+function exibeConsulta(despesas){
+	let listaDespesas = document.getElementById('listaDespesas')
+	listaDespesas.innerHTML = ''
+
+	despesas.forEach(function(d) {
+		let linha = listaDespesas.insertRow()
+		const [ano, mes, dia] = d.data.split('-')
+		linha.insertCell(0).innerHTML = `${dia}/${mes}/${ano}`
+		let categoria = traduzirCatParaFront(d.categoria)
+		linha.insertCell(1).innerHTML = categoria
+		linha.insertCell(2).innerHTML = d.descricao
+		linha.insertCell(3).innerHTML = formatarValorParaFront.format(d.valor)
+
+		let btn = document.createElement("button")
+		btn.className = "btn btn-danger"
+		btn.innerHTML = "<i class='fas fa-times'></i>"
+		btn.id = `id_deletar_${d.id}`
+		btn.onclick = function(){
+			removerDespesa(d, this)
+		} 
+
+		let btnEdit = document.createElement("button")
+		btnEdit.className = "btn btn-primary"
+		btnEdit.innerHTML = "<i class='fas fa-edit'></i>"
+		btnEdit.onclick = function(){
+			editarDespesa(d)
+				.catch(erro => {
+					console.error("Erro ao tentar carregar a edição:", erro)
+					alert("Erro: Não foi possível editar a despesa.")
+				})
+		}
+
+		linha.insertCell(4).append(btnEdit)
+		linha.insertCell(5).append(btn)
+	})
+}
+
 function exibeResumo(apiResposta){
 	let resumeDespesas = document.getElementById('listaDespesas')
 	resumeDespesas.innerHTML = ''
 
 	let ano = verificaDados('ano')
-	ano = ano ? ano : "Todos";
+	ano = ano ? ano : "Todos"
 	let mes = verificaDados('mes')
-	mes = mes ? traduzirMes('0' + mes) : "Todos";
+	mes = mes ? traduzirMes(mes.padStart(2, '0')) : "Todos"
 	let categoria = verificaDados('categoria')
-	categoria = categoria ? traduzirCatParaFront(traduzirCatParaApi(categoria)) : "Todas";
+	categoria = categoria ? traduzirCatParaFront(traduzirCatParaApi(categoria)) : "Todas"
 	let valorTotal = apiResposta.valorTotal.toFixed(2)
 
 	let linha = resumeDespesas.insertRow()
-	linha.insertCell(0).innerHTML = `${ano}`
-	linha.insertCell(1).innerHTML = `${mes}`
+	linha.insertCell(0).innerHTML = `${mes}`
+	linha.insertCell(1).innerHTML = `${ano}`
 	linha.insertCell(2).innerHTML = `${categoria}`
 			
-	let celulaValor = linha.insertCell(3);
-	celulaValor.className = "text-right";
-	celulaValor.innerHTML = valorTotal;
-}
-
-function exibirModalFeedback(tipo, titulo, mensagem) {
-	const modalDiv = document.getElementById('modalLblDiv')
-    const modalTitulo = document.getElementById('exampleModalLabel')
-    const modalCorpo = document.getElementById('modalMensagem')
-    const modalBotao = document.getElementById('modalBtn')
-
-	if (tipo === 'sucesso') {
-        modalDiv.className = 'modal-header text-success';
-        modalBotao.className = 'btn btn-success';
-        modalBotao.innerHTML = 'Voltar';
-    } else { 
-        modalDiv.className = 'modal-header text-danger';
-        modalBotao.className = 'btn btn-danger';
-        modalBotao.innerHTML = 'Voltar e corrigir';
-    }
-
-	modalTitulo.innerHTML = titulo;
-    modalCorpo.innerHTML = mensagem;
-    $('#modalRegistraDespesa').modal('show');
-}
-	
-document.addEventListener('DOMContentLoaded', function(){
-	const paginaAtual = window.location.pathname
-	if(paginaAtual.includes('consulta.html')){
-		pesquisarDespesa('consulta')
-	}else if(paginaAtual.includes('resumo.html')){
-		pesquisarDespesa('resumo')
-	}
-
-	formataCampos()
-})
-
-function limparFiltros(tipo){
-	document.getElementById('ano').value = ""
-	document.getElementById('mes').value = ""
-	document.getElementById('categoria').value = ""
-	pesquisarDespesa(tipo)
-}
-
-function limparForm(){
-		ano.value = ''
-		mes.value = ''
-		dia.value = ''
-		categoria.value = ''
-		descricao.value = ''
-		valor.value = ''
+	let celulaValor = linha.insertCell(3)
+	celulaValor.className = "text-right"
+	celulaValor.innerHTML = formatarValorParaFront.format(valorTotal)
 }
 
 function formataCampos(modo) {
@@ -414,28 +355,88 @@ function formataCampos(modo) {
     const campoValor = document.getElementById(valor)
 	if(campoValor){
 		campoValor.addEventListener('input', function (event) {
-				let valor = event.target.value
-				valor = valor.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1')
-				
-				const partes = valor.split('.')
-				if (partes.length === 2 && partes[1].length > 2) {
-					valor = `${partes[0]}.${partes[1].substring(0, 2)}`
-				}
-				event.target.value = valor
-			});
+			let valor = event.target.value
+			valor = valor.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1')
+			
+			const partes = valor.split('.')
+			if (partes.length === 2 && partes[1].length > 2) {
+				valor = `${partes[0]}.${partes[1].substring(0, 2)}`
+			}
+			event.target.value = valor
+		});
 
-			campoValor.addEventListener('blur', function (event) {
-				let valor = event.target.value
-
-				if (valor === "" || valor.endsWith('.')) {
-					return
-				}
-
-				let valorNumerico = parseFloat(valor);
-
-				if (!isNaN(valorNumerico)) {
-					event.target.value = valorNumerico.toFixed(2)
-				}
-			})
+		campoValor.addEventListener('blur', function (event) {
+			event.target.value = formatarValorParaApi(event.target.value)
+		})
 	}
+}
+
+function exibirModalFeedback(tipo, titulo, mensagem) {
+	const modalDiv = document.getElementById('modalLblDiv')
+    const modalTitulo = document.getElementById('exampleModalLabel')
+    const modalCorpo = document.getElementById('modalMensagem')
+    const modalBotao = document.getElementById('modalBtn')
+
+	if (tipo === 'sucesso') {
+        modalDiv.className = 'modal-header text-success'
+        modalBotao.className = 'btn btn-success'
+        modalBotao.innerHTML = 'Voltar'
+    } else { 
+        modalDiv.className = 'modal-header text-danger'
+        modalBotao.className = 'btn btn-danger'
+        modalBotao.innerHTML = 'Voltar e corrigir'
+    }
+
+	modalTitulo.innerHTML = titulo;
+    modalCorpo.innerHTML = mensagem;
+    $('#modalRegistraDespesa').modal('show')
+}
+
+function limparForm(){
+	ano.value = ''
+	mes.value = ''
+	dia.value = ''
+	categoria.value = ''
+	descricao.value = ''
+	valor.value = ''
+}
+
+function traduzirCatParaApi(id) {
+    return CAT_ID_PARA_API[id] || 'OUTROS'
+}
+
+function traduzirCatParaFront(categoriaApi) {
+    return CAT_API_PARA_FRONT[categoriaApi] ? CAT_API_PARA_FRONT[categoriaApi].front : 'Outros'
+}
+
+function traduzirCatParaEdit(categoriaApi) {
+    return CAT_API_PARA_FRONT[categoriaApi] ? CAT_API_PARA_FRONT[categoriaApi].id : '6'
+}
+
+function traduzirMes(mes){
+	return MES_API_PARA_FRONT[mes] || '';
+}
+
+function traduzirDataEdit(data){
+	let [ano, mes, dia] = data.split('-')
+	mes = Number(mes)
+	return [ano, mes, dia]
+}
+
+function formatarValorParaApi(valorStr){
+	if (valorStr === "" || valorStr.endsWith('.')) {
+        return valorStr
+    }
+    
+    let valorNum = parseFloat(valorStr)
+
+    if (!isNaN(valorNum)) {
+        return valorNum.toFixed(2)
+    }
+    return valorStr
+}
+
+function verificaDados(id) {
+    const elemento = document.getElementById(id)
+    return elemento ? elemento.value : ''
 }
